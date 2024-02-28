@@ -1,4 +1,8 @@
 import { Play } from 'phosphor-react'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import * as zod from 'zod'
+
 import {
   CountdownContainer,
   FormContainer,
@@ -9,10 +13,37 @@ import {
   TaskInput,
 } from './style'
 
+const newCycleFormValidationSchema = zod.object({
+  task: zod.string().min(1, 'Informe a tarefa'),
+  minutesAmount: zod
+    .number()
+    .min(5, 'Cycle must be greater than 5 minutes')
+    .max(60, 'Cycle must be lower than 60 minutes'),
+})
+
+type NewCycleFormData = zod.infer<typeof newCycleFormValidationSchema>
+
 export function Home() {
+  const { register, handleSubmit, watch, reset } = useForm({
+    resolver: zodResolver(newCycleFormValidationSchema),
+    defaultValues: {
+      task: '',
+      minutesAmount: 0,
+    },
+  })
+
+  function handleCreateNewCycle({ task, minutesAmount }: NewCycleFormData) {
+    console.log('Data: ', task)
+    console.log('Data: ', minutesAmount)
+    reset()
+  }
+
+  const task = watch('task')
+  const isSubmitedDisabled = !task
+
   return (
     <HomeContainer>
-      <form action="">
+      <form action="" onSubmit={handleSubmit(handleCreateNewCycle)}>
         <FormContainer>
           <label htmlFor="">Vou trabalhar em</label>
           <TaskInput
@@ -20,6 +51,7 @@ export function Home() {
             id="task"
             placeholder="De um nome para seu projeto"
             list="task-suggestions"
+            {...register('task')}
           />
 
           <datalist id="task-suggestions">
@@ -37,6 +69,9 @@ export function Home() {
             step={5}
             min={5}
             max={60}
+            {...register('minutesAmount', {
+              valueAsNumber: true,
+            })}
           />
 
           <span>minutos.</span>
@@ -50,7 +85,7 @@ export function Home() {
           <span>0</span>
         </CountdownContainer>
 
-        <StartCountDownButton type="submit">
+        <StartCountDownButton type="submit" disabled={isSubmitedDisabled}>
           <Play /> Começar
         </StartCountDownButton>
       </form>
